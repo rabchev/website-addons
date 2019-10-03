@@ -146,11 +146,13 @@ class StockPicking(models.Model):
                 )
         return package_id
 
-    def action_done_from_ui(self, picking_id):
+    @api.multi
+    def action_done_from_ui(self):
         """ called when button 'done' is pushed in the barcode scanner UI """
         # write qty_done into field product_qty for every package_operation before doing the transfer
-        for operation in self.browse(picking_id).move_line_ids:
-            operation.with_context(no_recompute=True).write({'product_uom_qty': operation.qty_done})
+        for picking in self:
+            for operation in picking.move_line_ids:
+                operation.with_context(no_recompute=True).write({'product_uom_qty': operation.qty_done})
         self.do_transfer()
         # return id of next picking to work on
         return self.get_next_picking_for_ui(self.picking_type_id.id)
